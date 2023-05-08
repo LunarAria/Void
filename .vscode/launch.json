@@ -13,7 +13,7 @@
             "console": "externalTerminal",
             "preLaunchTask": "skeleton",
             "env": {
-                "RUST_LOG": "info"
+                "RUST_LOG": "debug"
             }
         }
     ]
