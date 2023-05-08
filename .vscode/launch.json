@@ -11,7 +11,10 @@
             "cwd": "${fileDirname}",
             "environment": [],
             "console": "externalTerminal",
-            "preLaunchTask": "skeleton"
+            "preLaunchTask": "skeleton",
+            "env": {
+                "RUST_LOG": "info"
+            }
         }
     ]
 }
