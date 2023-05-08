@@ -13,10 +13,11 @@ use std::os::raw::c_void;
 
 use vulkanalia::loader::{LibloadingLoader, LIBRARY};
 use vulkanalia::prelude::v1_0::*;
-use vulkanalia::vk::ExtDebugUtilsExtension;
-use vulkanalia::vk::KhrSurfaceExtension;
 use vulkanalia::window as vk_window;
 use vulkanalia::Version;
+use vulkanalia::vk::ExtDebugUtilsExtension;
+use vulkanalia::vk::KhrSurfaceExtension;
+use vulkanalia::vk::KhrSwapchainExtension;
 
 use winit::dpi::LogicalSize;
 use winit::event::{Event, WindowEvent};
@@ -28,13 +29,16 @@ mod app;
 mod appdata;
 mod external;
 mod queuefamily;
+mod swapchainsupport;
 
 /// The Vulkan SDK version that started requiring the portability subset extension for macOS.
 const PORTABILITY_MACOS_VERSION: Version = Version::new(1, 3, 216);
 const VALIDATION_ENABLED: bool = cfg!(debug_assertions);
 const VALIDATION_LAYER: vk::ExtensionName =
     vk::ExtensionName::from_bytes(b"VK_LAYER_KHRONOS_validation");
+const DEVICE_EXTENSIONS: &[vk::ExtensionName] = &[vk::KHR_SWAPCHAIN_EXTENSION.name];
 const ENGINE_VERSION: &str = "0.1";
+
 
 #[rustfmt::skip]
 fn main() -> Result<()> {

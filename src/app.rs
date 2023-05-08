@@ -16,11 +16,12 @@ use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::{Window, WindowBuilder};
 
-use crate::{PORTABILITY_MACOS_VERSION, VALIDATION_ENABLED, VALIDATION_LAYER};
+use crate::{PORTABILITY_MACOS_VERSION, VALIDATION_ENABLED, VALIDATION_LAYER, DEVICE_EXTENSIONS};
 
 use super::appdata::AppData;
 use super::external;
 use super::queuefamily::QueueFamilyIndices;
+use super::swapchainsupport::SwapchainSupport;
 
 /// Our Vulkan app.
 #[derive(Clone, Debug)]
@@ -179,7 +180,30 @@ unsafe fn check_physical_device(
     physical_device: vk::PhysicalDevice,
 ) -> Result<()> {
     QueueFamilyIndices::get(instance, data, physical_device)?;
+    check_physical_device_extensiosn(instance, physical_device)?;
+
+    let support = SwapchainSupport::get(instance, data, physical_device)?;
+    if support.formats.is_empty() || support.present_modes.is_empty() {
+        return Err(anyhow!(SuitabilityError("Insufficient swapchain support.")));
+    }
+
     Ok(())
+}
+
+unsafe fn check_physical_device_extensiosn(
+    instance: &Instance,
+    physical_device: vk::PhysicalDevice,
+) -> Result<()> {
+    let extensiosn = instance
+        .enumerate_device_extension_properties(physical_device, None)?
+        .iter()
+        .map(|e| e.extension_name)
+        .collect::<HashSet<_>>();
+    if DEVICE_EXTENSIONS.iter().all(|e| extensiosn.contains(e)) {
+        Ok(())
+    } else {
+        Err(anyhow!(SuitabilityError("Missing required device extensions.")))
+    }
 }
 
 unsafe fn create_logical_device(
@@ -210,7 +234,10 @@ unsafe fn create_logical_device(
     };
 
     // Extensions
-    let mut extensions = vec![];
+    let mut extensions = DEVICE_EXTENSIONS
+        .iter()
+        .map(|n| n.as_ptr())
+        .collect::<Vec<_>>();
 
     // Required by Vulkan SDK on macOS since 1.3.216.
     if cfg!(target_os = "macos") && entry.version()? >= PORTABILITY_MACOS_VERSION {
